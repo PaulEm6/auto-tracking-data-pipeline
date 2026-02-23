@@ -20,4 +20,4 @@
     - Keep image quality as much possible
     - Security
 
-High level diagram: ![high-level-diagram.png](.documentation/high-level-diagram.png)
+High level diagram: ![high-level-diagram.png](high-level-diagram.png)
