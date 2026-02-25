@@ -1,7 +1,7 @@
 ## Camera Auto-tracking Webapp
 
 - Data Ingestion:
-    - Use FFmpeg to get camera flow from Camera via USB or HTTP into python server
+    - Use FFmpeg or OpenCV to get camera flow from Camera via USB or HTTP into python server
 
 - Subject detection and cropping of person:
     - YOLO and OpenCV respectively for automatically detecting subject and cropping the image
