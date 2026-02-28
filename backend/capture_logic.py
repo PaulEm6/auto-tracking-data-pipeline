@@ -13,8 +13,6 @@ def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
 
 def capture_loop(cap: cv2.VideoCapture):
 
-    cap = configure_capture(cap)
-
     cascade_path = Path(cv2.__file__).parent.absolute() / "data/haarcascade_frontalface_default.xml"  
     print(f'Using cascade file: {cascade_path}')
     clf = cv2.CascadeClassifier(str(cascade_path))
