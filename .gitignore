@@ -2,3 +2,5 @@
 .documentation/drawio/
 .venv/
 TECHNICAL.md
+*.pyc
+__pycache__/*
