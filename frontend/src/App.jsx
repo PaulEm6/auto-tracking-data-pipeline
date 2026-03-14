@@ -29,8 +29,9 @@ function VideoCanvas({ frame, metadata }) {
     />
   );
 }
- 
+
 function useWebSocketStream(url) {
+  
   const [frame, setFrame] = useState(null);
   const [metadata, setMetadata] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -53,30 +54,22 @@ function useWebSocketStream(url) {
   return { frame, metadata, connected };
 }
 
-function OriginalStream() {
-  
-  const { frame, metadata, connected } = useWebSocketStream(
-    "ws://localhost:8000/ws/stream"
-  );
+function OriginalStream({ isCapturing }) {
 
   return (
     <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
       <h2 className="mb-3 text-lg font-medium text-blue-200">Original Stream</h2>
 
       <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
-        <VideoCanvas frame={frame} metadata={metadata} />
-
-        {!connected && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
-            Waiting for capture to start…
+            {isCapturing ? 'Streaming original output…' : 'Waiting for capture to start'}
           </div>
-        )}
-      </div>
+    </div>
     </section>
   );
 }
 
-function CroppedStream() {
+function CroppedStream({ isCapturing }) {
   return (
       <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
         <h2 className="mb-3 text-lg font-medium text-blue-200">Cropped / Tracked Stream</h2>
@@ -103,9 +96,9 @@ function App() {
       <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
         <div className="flex-1 grid gap-6 lg:grid-cols-2">  
           {/* Code for original stream section with conditional text based on capture state */}
-          <OriginalStream />
+          <OriginalStream isCapturing={isCapturing} />
           {/* Code for cropped/tracked stream section with conditional text based on capture state */}
-          <CroppedStream />
+          <CroppedStream isCapturing={isCapturing} />
         </div>
 
         {/* Code for the start/stop capture button with dynamic text and styling */}

@@ -4,3 +4,4 @@
 TECHNICAL.md
 *.pyc
 __pycache__/*
+backend/__pycache__/*   

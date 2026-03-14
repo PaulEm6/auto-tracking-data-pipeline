@@ -1,3 +1,4 @@
+import asyncio
 import base64
 
 import cv2
@@ -40,7 +41,7 @@ async def root():
 
 
 #Use webocket to stream video frames and metadata to the frontend
-@app.websocket("/ws/capture_loop")
+@app.websocket("/stream")
 async def stream_video(websocket: WebSocket):
 
     await websocket.accept()
@@ -53,7 +54,9 @@ async def stream_video(websocket: WebSocket):
 
     while True:
 
-        # Logic for capturing frames, detecting faces, and sending data to the frontend
+        await asyncio.sleep(0.03)  # Limit to ~30 FPS
+
+        # Logic for capturing frames, detecting faces, and sending encoded data to the frontend
         bounding_box_metadata, frame_b64 = capture_detect_and_encode(cap, clf)
         
         payload = {

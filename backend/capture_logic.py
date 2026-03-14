@@ -3,6 +3,7 @@ import base64
 from dataclasses import dataclass
 from logging import config
 from pathlib import Path
+import asyncio
 import cv2
 
 
@@ -13,7 +14,7 @@ def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
     return cap
 
 def capture_detect_and_encode(cap: cv2.VideoCapture, clf: cv2.CascadeClassifier):
-    
+
     _, frame = cap.read()
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
