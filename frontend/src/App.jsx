@@ -56,6 +56,8 @@ function useWebSocketStream(url) {
 
 function OriginalStream({ isCapturing }) {
 
+  const { frame, metadata, connected } = useWebSocketStream('ws://localhost:8000/stream');
+
   return (
     <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
       <h2 className="mb-3 text-lg font-medium text-blue-200">Original Stream</h2>
@@ -63,6 +65,11 @@ function OriginalStream({ isCapturing }) {
       <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
             {isCapturing ? 'Streaming original output…' : 'Waiting for capture to start'}
+            
+            {connected && (
+              <VideoCanvas frame={frame} metadata={metadata} />
+            )}
+
           </div>
     </div>
     </section>
