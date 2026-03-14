@@ -1,12 +1,15 @@
+import base64
+
 import cv2
 import uvicorn
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, WebSocket
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from cv2 import VideoCapture
 
-from capture_logic import configure_capture, capture_loop
+from capture_logic import configure_capture, capture_detect_and_encode
 
 import logging
 
@@ -22,15 +25,43 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Allow CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Basic health check endpoint
 @app.get("/health")
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/start_capture")
-async def start_capture():
+
+#Use webocket to stream video frames and metadata to the frontend
+@app.websocket("/ws/capture_loop")
+async def stream_video(websocket: WebSocket):
+
+    await websocket.accept()
+
     cap = configure_capture(cv2.VideoCapture(0, cv2.CAP_DSHOW))
-    capture_loop(cap)
-    return {"message": "Capture ended"}
+
+    cascade_path = Path(cv2.__file__).parent.absolute() / "data/haarcascade_frontalface_default.xml"  
+    logger.info(f'Using cascade file: {cascade_path}')
+    clf = cv2.CascadeClassifier(str(cascade_path))
+
+    while True:
+
+        # Logic for capturing frames, detecting faces, and sending data to the frontend
+        bounding_box_metadata, frame_b64 = capture_detect_and_encode(cap, clf)
+        
+        payload = {
+            "frame": frame_b64,
+            "metadata": bounding_box_metadata
+        }
+
+        await websocket.send_json(payload)     
 
 if __name__ == "__main__":
     

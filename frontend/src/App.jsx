@@ -1,17 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-function OriginalStream() {
+function VideoCanvas({ frame, metadata }) {
+  
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!frame) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    const img = new Image();
+    img.src = `data:image/jpeg;base64,${frame}`;
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+
+  }, [frame, metadata]);
+
   return (
-      <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
-        <h2 className="mb-3 text-lg font-medium text-blue-200">Original Stream</h2>
-        <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
+    <canvas
+      ref={canvasRef}
+      width={640}
+      height={480}
+      className="absolute inset-0"
+    />
+  );
+}
+ 
+function useWebSocketStream(url) {
+  const [frame, setFrame] = useState(null);
+  const [metadata, setMetadata] = useState([]);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setFrame(data.frame);
+      setMetadata(data.metadata);
+    };
+
+    return () => ws.close();
+  }, [url]);
+
+  return { frame, metadata, connected };
+}
+
+function OriginalStream() {
+  
+  const { frame, metadata, connected } = useWebSocketStream(
+    "ws://localhost:8000/ws/stream"
+  );
+
+  return (
+    <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
+      <h2 className="mb-3 text-lg font-medium text-blue-200">Original Stream</h2>
+
+      <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
+        <VideoCanvas frame={frame} metadata={metadata} />
+
+        {!connected && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
-            {isCapturing ? 'Streaming original feed…' : 'Waiting for capture to start'}
+            Waiting for capture to start…
           </div>
-        </div>
-      </section>
-  )
+        )}
+      </div>
+    </section>
+  );
 }
 
 function CroppedStream() {

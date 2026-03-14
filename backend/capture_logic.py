@@ -1,4 +1,5 @@
 
+import base64
 from dataclasses import dataclass
 from logging import config
 from pathlib import Path
@@ -11,34 +12,32 @@ def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     return cap
 
-def capture_loop(cap: cv2.VideoCapture):
+def capture_detect_and_encode(cap: cv2.VideoCapture, clf: cv2.CascadeClassifier):
+    
+    _, frame = cap.read()
 
-    cascade_path = Path(cv2.__file__).parent.absolute() / "data/haarcascade_frontalface_default.xml"  
-    print(f'Using cascade file: {cascade_path}')
-    clf = cv2.CascadeClassifier(str(cascade_path))
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    while True:
+    faces = clf.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
 
-        _, frame = cap.read()
+    bounding_box_metadata = {
+        "faces": [
+            {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
+            for (x, y, w, h) in faces
+        ]
+    }
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = clf.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
+    _, buffer = cv2.imencode(".jpg", frame)
 
-        for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    frame_b64 = base64.b64encode(buffer).decode("utf-8")
 
-        cv2.imshow('Camera', frame)
-        
-        if cv2.waitKey(1) == ord('q'): break
+    return bounding_box_metadata, frame_b64
 
-    cap.release()
-    cv2.destroyAllWindows()
-
-    if __name__ == "__main__":
-        print("Running capture loop...")
+if __name__ == "__main__":
+    print("Running capture loop...")
