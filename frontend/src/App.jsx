@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
+{/*React Component for drawing a single video frame of an encoded image*/}
 function VideoCanvas({ frame, metadata }) {
   
   const canvasRef = useRef(null);
@@ -9,7 +10,7 @@ function VideoCanvas({ frame, metadata }) {
     if (!frame) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d"); {/* Ctx is the reference to the object that will be used to draw on the canvas */}
 
     const img = new Image();
     img.src = `data:image/jpeg;base64,${frame}`;
@@ -30,6 +31,7 @@ function VideoCanvas({ frame, metadata }) {
   );
 }
 
+{/*React Component for connecting to the websocket stream from backend that continuously streams the video frames */}
 function useWebSocketStream(url) {
   
   const [frame, setFrame] = useState(null);
@@ -54,6 +56,7 @@ function useWebSocketStream(url) {
   return { frame, metadata, connected };
 }
 
+{/* React Component for displaying the original video stream with conditional text based on capture state and connection status */}
 function OriginalStream({ isCapturing }) {
 
   const { frame, metadata, connected } = useWebSocketStream('ws://localhost:8000/stream');
@@ -76,6 +79,7 @@ function OriginalStream({ isCapturing }) {
   );
 }
 
+{/* React Component for displaying the cropped/tracked video stream with conditional text based on capture state */}
 function CroppedStream({ isCapturing }) {
   return (
       <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
