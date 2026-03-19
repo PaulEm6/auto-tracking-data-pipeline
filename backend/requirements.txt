@@ -1,0 +1,4 @@
+opencv-python-headless ## better for containers instead of opencv-python, which has GUI dependencies
+fastapi
+uvicorn
+websockets
