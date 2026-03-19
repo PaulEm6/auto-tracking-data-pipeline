@@ -2,31 +2,67 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 {/*React Component for drawing a single video frame of an encoded image*/}
-function VideoCanvas({ frame, metadata }) {
-  
+function VideoCanvas({ frame, metadata, isProcessed = false }) {
   const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const parent = canvas.parentElement;
+
+    if (!canvas || !parent) return;
+
+    // Match canvas resolution to parent size
+    const resizeCanvas = () => {
+      const { width, height } = parent.getBoundingClientRect();
+      canvas.width = width;
+      canvas.height = height;
+    };
+
+    resizeCanvas();
+
+    // Optional: handle window resize
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(parent);
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!frame) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d"); {/* Ctx is the reference to the object that will be used to draw on the canvas */}
+    const ctx = canvas.getContext("2d");
 
     const img = new Image();
     img.src = `data:image/jpeg;base64,${frame}`;
 
     img.onload = () => {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    };
+      const scaleX = canvas.width / img.width;
+      const scaleY = canvas.height / img.height;
 
-  }, [frame, metadata]);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      if (metadata?.faces && isProcessed) {
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 2;
+
+        metadata.faces.forEach(({ x, y, w, h }) => {
+          ctx.strokeRect(
+            x * scaleX,
+            y * scaleY,
+            w * scaleX,
+            h * scaleY
+          );
+        });
+      }
+    };
+  }, [frame, metadata, isProcessed]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={640}
-      height={480}
-      className="absolute inset-0"
+      className="absolute inset-0 w-full h-full"
     />
   );
 }
@@ -69,8 +105,8 @@ function OriginalStream({ isCapturing }) {
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
             {isCapturing ? 'Streaming original output…' : 'Waiting for capture to start'}
             
-            {connected && (
-              <VideoCanvas frame={frame} metadata={metadata} />
+            {connected && isCapturing && (
+              <VideoCanvas frame={frame} metadata={metadata} isProcessed={false} />
             )}
 
           </div>
@@ -81,12 +117,20 @@ function OriginalStream({ isCapturing }) {
 
 {/* React Component for displaying the cropped/tracked video stream with conditional text based on capture state */}
 function CroppedStream({ isCapturing }) {
+
+  const { frame, metadata, connected } = useWebSocketStream('ws://localhost:8000/stream');
+
   return (
       <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
         <h2 className="mb-3 text-lg font-medium text-blue-200">Cropped / Tracked Stream</h2>
         <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
             {isCapturing ? 'Streaming cropped output…' : 'Waiting for capture to start'}
+
+            {connected && isCapturing && (
+              <VideoCanvas frame={frame} metadata={metadata} isProcessed={true} />
+            )}
+
           </div>
         </div>
       </section>
