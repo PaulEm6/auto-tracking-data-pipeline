@@ -1,11 +1,13 @@
 
 import base64
+import logging
 from dataclasses import dataclass
 from logging import config
 from pathlib import Path
 import asyncio
 import cv2
 
+logger = logging.getLogger("uvicorn.error") 
 
 def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -16,6 +18,10 @@ def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
 def capture_detect_and_encode(cap: cv2.VideoCapture, clf: cv2.CascadeClassifier):
 
     _, frame = cap.read()
+
+    if not _ or frame is None:
+        logger.info("Failed to capture frame from webcam.")
+        return {"faces": []}, ""
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
