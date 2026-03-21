@@ -8,7 +8,8 @@ import asyncio
 import cv2
 import numpy as np
 
-logger = logging.getLogger("uvicorn.error") 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -28,9 +29,15 @@ def classify_frame(
     Detect faces in a BGR image and return JSON-serializable metadata.
     Returns {"faces": []} if frame is missing or invalid.
     """
+
+    print("Classifying frame...")
+    print(f"Frame type: {type(frame)}, frame shape: {frame.shape if frame is not None else 'N/A'}")
+
     if frame is None:
-        logger.warning("classify_frame received an empty frame")
+        logger.info("Empty frame received, returning empty detections")
         return {"faces": []}
+
+    logger.info(f"Frame received, frame shape: {frame.shape}, dtype: {frame.dtype}") # DEBUGGING PURPOSES
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
