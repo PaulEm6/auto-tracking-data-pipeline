@@ -6,6 +6,7 @@ from logging import config
 from pathlib import Path
 import asyncio
 import cv2
+import numpy as np
 
 logger = logging.getLogger("uvicorn.error") 
 
@@ -15,36 +16,38 @@ def configure_capture(cap: cv2.VideoCapture) -> cv2.VideoCapture:
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     return cap
 
-def capture_detect_and_encode(cap: cv2.VideoCapture, clf: cv2.CascadeClassifier):
-
-    _, frame = cap.read()
-
-    if not _ or frame is None:
-        logger.info("Failed to capture frame from webcam.")
-        return {"faces": []}, ""
+def classify_frame(
+    frame: np.ndarray | None,
+    clf: cv2.CascadeClassifier,
+    *,
+    scale_factor: float = 1.1,
+    min_neighbors: int = 5,
+    min_size: tuple[int, int] = (30, 30),
+) -> dict[str, list[dict[str, int]]]:
+    """
+    Detect faces in a BGR image and return JSON-serializable metadata.
+    Returns {"faces": []} if frame is missing or invalid.
+    """
+    if frame is None:
+        logger.warning("classify_frame received an empty frame")
+        return {"faces": []}
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    faces = clf.detectMultiScale(
+    detections = clf.detectMultiScale(
         gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(30, 30),
-        flags=cv2.CASCADE_SCALE_IMAGE
+        scaleFactor=scale_factor,
+        minNeighbors=min_neighbors,
+        minSize=min_size,
+        flags=cv2.CASCADE_SCALE_IMAGE,
     )
 
-    bounding_box_metadata = {
+    return {
         "faces": [
             {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
-            for (x, y, w, h) in faces
+            for (x, y, w, h) in detections
         ]
     }
-
-    _, buffer = cv2.imencode(".jpg", frame)
-
-    frame_b64 = base64.b64encode(buffer).decode("utf-8")
-
-    return bounding_box_metadata, frame_b64
 
 if __name__ == "__main__":
     print("Running capture loop...")

@@ -1,6 +1,6 @@
 import asyncio
 import base64
-
+import numpy as np
 import cv2
 import uvicorn
 from pathlib import Path
@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from cv2 import VideoCapture
 
-from capture_logic import configure_capture, capture_detect_and_encode
+from capture_logic import configure_capture, classify_frame
 
 import logging
 
@@ -46,25 +46,23 @@ async def stream_video(websocket: WebSocket):
 
     await websocket.accept()
 
-    cap = configure_capture(cv2.VideoCapture(0, cv2.CAP_DSHOW))
-
     cascade_path = Path(cv2.__file__).parent.absolute() / "data/haarcascade_frontalface_default.xml"  
     logger.info(f'Using cascade file: {cascade_path}')
     clf = cv2.CascadeClassifier(str(cascade_path))
 
     while True:
 
-        await asyncio.sleep(0.03)  # Limit to ~30 FPS
+        data = await websocket.receive_bytes()
 
-        # Logic for capturing frames, detecting faces, and sending encoded data to the frontend
-        bounding_box_metadata, frame_b64 = capture_detect_and_encode(cap, clf)
-        
-        payload = {
-            "frame": frame_b64,
-            "metadata": bounding_box_metadata
-        }
+        #Convert bytes to np array to image
 
-        await websocket.send_json(payload)     
+        img_array = np.frombuffer(data, dtype=np.uint8)
+        frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+        prediction_metadata = classify_frame(frame, clf)
+
+        await websocket.send_json(prediction_metadata)
+
 
 if __name__ == "__main__":
     

@@ -1,171 +1,38 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import './App.css'
-
-{/*React Component for drawing a single video frame of an encoded image*/}
-function VideoCanvas({ frame, metadata, isProcessed = false }) {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const parent = canvas.parentElement;
-
-    if (!canvas || !parent) return;
-
-    // Match canvas resolution to parent size
-    const resizeCanvas = () => {
-      const { width, height } = parent.getBoundingClientRect();
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    resizeCanvas();
-
-    // Optional: handle window resize
-    const observer = new ResizeObserver(resizeCanvas);
-    observer.observe(parent);
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!frame) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const img = new Image();
-    img.src = `data:image/jpeg;base64,${frame}`;
-
-    img.onload = () => {
-      const scaleX = canvas.width / img.width;
-      const scaleY = canvas.height / img.height;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      if (metadata?.faces && isProcessed) {
-        ctx.strokeStyle = "green";
-        ctx.lineWidth = 2;
-
-        metadata.faces.forEach(({ x, y, w, h }) => {
-          ctx.strokeRect(
-            x * scaleX,
-            y * scaleY,
-            w * scaleX,
-            h * scaleY
-          );
-        });
-      }
-    };
-  }, [frame, metadata, isProcessed]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-    />
-  );
-}
-
-{/*React Component for connecting to the websocket stream from backend that continuously streams the video frames */}
-function useWebSocketStream(url) {
-  
-  const [frame, setFrame] = useState(null);
-  const [metadata, setMetadata] = useState([]);
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    const ws = new WebSocket(url);
-
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setFrame(data.frame);
-      setMetadata(data.metadata);
-    };
-
-    return () => ws.close();
-  }, [url]);
-
-  return { frame, metadata, connected };
-}
-
-{/* React Component for displaying the original video stream with conditional text based on capture state and connection status */}
-function OriginalStream({ isCapturing }) {
-
-  const { frame, metadata, connected } = useWebSocketStream('ws://localhost:8000/stream');
-
-  return (
-    <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
-      <h2 className="mb-3 text-lg font-medium text-blue-200">Original Stream</h2>
-
-      <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
-            {isCapturing ? 'Streaming original output…' : 'Waiting for capture to start'}
-            
-            {connected && isCapturing && (
-              <VideoCanvas frame={frame} metadata={metadata} isProcessed={false} />
-            )}
-
-          </div>
-    </div>
-    </section>
-  );
-}
-
-{/* React Component for displaying the cropped/tracked video stream with conditional text based on capture state */}
-function CroppedStream({ isCapturing }) {
-
-  const { frame, metadata, connected } = useWebSocketStream('ws://localhost:8000/stream');
-
-  return (
-      <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
-        <h2 className="mb-3 text-lg font-medium text-blue-200">Cropped / Tracked Stream</h2>
-        <div className="relative flex-1 overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
-            {isCapturing ? 'Streaming cropped output…' : 'Waiting for capture to start'}
-
-            {connected && isCapturing && (
-              <VideoCanvas frame={frame} metadata={metadata} isProcessed={true} />
-            )}
-
-          </div>
-        </div>
-      </section>
-  )
-}
+import CameraPreview from './components/CameraPreview'
+import CaptureControls from './components/CaptureControls'
+import StreamStatus from './components/StreamStatus'
+import { useCameraStream } from './hooks/useCameraStream'
 
 function App() {
   const [isCapturing, setIsCapturing] = useState(false)
+  const { stream, isCameraReady, cameraError } = useCameraStream()
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-950 via-blue-900 to-sky-900 text-slate-100">
-      {/* Code for header section with title and description */}
       <header className="flex flex-col gap-3 px-6 py-10 text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Auto Tracking Demo</h1>
-        <p className="text-slate-200/80">Two concurrent streams (original + cropped) with a single start control.</p>
+        <p className="text-slate-200/80">Local camera preview with side-by-side outputs and simple capture controls.</p>
       </header>
 
       <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
-        <div className="flex-1 grid gap-6 lg:grid-cols-2">  
-          {/* Code for original stream section with conditional text based on capture state */}
-          <OriginalStream isCapturing={isCapturing} />
-          {/* Code for cropped/tracked stream section with conditional text based on capture state */}
-          <CroppedStream isCapturing={isCapturing} />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CameraPreview
+            title="Live Camera (Raw)"
+            stream={stream}
+            isCapturing={isCapturing}
+          />
+          <CameraPreview
+            title="Live Camera (Duplicate View)"
+            stream={stream}
+            isCapturing={isCapturing}
+          />
         </div>
 
-        {/* Code for the start/stop capture button with dynamic text and styling */}
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => setIsCapturing(prev => !prev)}
-            className="inline-flex items-center justify-center rounded-full bg-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-500/30 transition hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-          >
-            {isCapturing ? 'Stop capture' : 'Start capture'}
-          </button>
-        </div>
+        <StreamStatus isCameraReady={isCameraReady} cameraError={cameraError} />
+
+        <CaptureControls isCapturing={isCapturing} onToggle={() => setIsCapturing((prev) => !prev)} />
       </main>
     </div>
   )
