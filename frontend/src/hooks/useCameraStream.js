@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+{/* Custom hook for managing camera stream access and state */}
 export function useCameraStream() {
   const streamRef = useRef(null);
   const captureVideoRef = useRef(null);
@@ -50,7 +51,7 @@ export function useCameraStream() {
 
   return {
     stream,
-    captureVideoRef, // return this
+    captureVideoRef, // return this ref so it can be attached to a hidden video element
     isCameraReady,
     cameraError,
   };

@@ -30,9 +30,6 @@ def classify_frame(
     Returns {"faces": []} if frame is missing or invalid.
     """
 
-    print("Classifying frame...")
-    print(f"Frame type: {type(frame)}, frame shape: {frame.shape if frame is not None else 'N/A'}")
-
     if frame is None:
         logger.info("Empty frame received, returning empty detections")
         return {"faces": []}

@@ -1,3 +1,6 @@
+
+{/*Component for capture controls, allowing the user to start and stop the video capture*/}
+
 export default function CaptureControls({ isCapturing, onToggle }) {
   return (
     <div className="flex justify-center">

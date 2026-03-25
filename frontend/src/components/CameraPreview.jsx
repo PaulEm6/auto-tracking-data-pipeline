@@ -1,7 +1,16 @@
 import { useEffect, useRef } from 'react'
+import { useBoundingBoxDrawer } from '../hooks/useBoundingBoxDrawer'
 
-export default function CameraPreview({ title, stream, isCapturing }) {
+
+{/*Component used to display a camera preview with optional bounding box overlay*/}
+
+export default function CameraPreview({ title, stream, isCapturing, isProcessed, metadata }) {
+  
   const videoRef = useRef(null)
+
+  const canvasRef = useRef(null)
+
+  useBoundingBoxDrawer({ canvasRef, videoRef, metadata })
 
   useEffect(() => {
     const video = videoRef.current
@@ -20,13 +29,19 @@ export default function CameraPreview({ title, stream, isCapturing }) {
     <section className="flex flex-col rounded-2xl border border-blue-500/40 bg-slate-950/40 p-4 shadow-lg backdrop-blur">
       <h2 className="mb-3 text-lg font-medium text-blue-200">{title}</h2>
       <div className="relative aspect-video overflow-hidden rounded-xl border border-blue-500/30 bg-blue-950">
+        
         <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
+        
+        {isProcessed && (
+        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+        )}
 
         {!isCapturing && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-300/80">
             Capture paused
           </div>
         )}
+
       </div>
     </section>
   )

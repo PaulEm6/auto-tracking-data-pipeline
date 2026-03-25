@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+/* Custom hook for managing a WebSocket connection to a face stream */
 export function useFaceStreamSocket(url) {
   const wsRef = useRef(null);
   const [connected, setConnected] = useState(false);

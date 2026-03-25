@@ -11,6 +11,8 @@ import { useFrameSender } from './hooks/useFrameSender'
 
 function App() {
   const [isCapturing, setIsCapturing] = useState(false)
+  const [isProcessed, setIsProcessed] = useState(false)
+
   const { stream, captureVideoRef, isCameraReady, cameraError } = useCameraStream()
   const { wsRef, connected , metadata } = useFaceStreamSocket('ws://localhost:8000/stream')
   
@@ -36,11 +38,16 @@ function App() {
             title="Live Camera (Raw)"
             stream={stream}
             isCapturing={isCapturing}
+            isProcessed={false}
+            metadata={metadata}
           />
+          
           <CameraPreview
             title="Live Camera (Duplicate View)"
             stream={stream}
             isCapturing={isCapturing}
+            isProcessed={true}
+            metadata={metadata}
           />
         </div>
 

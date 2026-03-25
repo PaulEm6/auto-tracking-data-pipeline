@@ -1,3 +1,5 @@
+{/*Component for displaying the status of the camera stream*/}
+
 export default function StreamStatus({ isCameraReady, cameraError }) {
   const cameraLabel = isCameraReady ? 'Ready' : 'Waiting'
 
