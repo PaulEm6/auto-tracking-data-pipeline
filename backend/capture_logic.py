@@ -34,7 +34,7 @@ def classify_frame(
         logger.info("Empty frame received, returning empty detections")
         return {"faces": []}
 
-    logger.info(f"Frame received, frame shape: {frame.shape}, dtype: {frame.dtype}") # DEBUGGING PURPOSES
+    logger.info(f"Frame received, frame shape: {frame.shape}, dtype: {frame.dtype}") 
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 

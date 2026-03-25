@@ -6,4 +6,4 @@
 > wscat -c ws://localhost:8000/stream
 > docker build -t <image_name:tag> .
 > docker run -p <host_port>:<container_port> <image_name>:<tag>
->
+> docker compose up --build
